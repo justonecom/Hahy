@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in - Google Accounts</title>
+    <!-- Google Identity Services Library -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f0f4f9;
+        }
+        
+        .google-card {
+            background-color: #ffffff;
+            border: 1px solid #dadce0;
+            border-radius: 20px;
+            box-shadow: 0 1px 3px 0 rgba(60,64,67,0.08), 0 4px 8px 3px rgba(60,64,67,0.04);
+        }
+
+        .hidden-view {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Compact Main Container -->
+    <div class="google-card w-full max-w-[320px] p-6 text-center transition-all">
+        
+        <!-- LOGIN VIEW -->
+        <div id="login-view" class="flex flex-col items-center">
+            
+            <!-- Official Google 4-Color SVG Logo (Small) -->
+            <svg class="w-8 h-8 mb-3" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.18v3.14C3.15 21.32 7.24 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.62H1.18C.43 8.13 0 9.84 0 12s.43 3.87 1.18 5.38l4.09-3.14z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.24 0 3.15 2.68 1.18 6.62l4.09 3.14c.95-2.85 3.6-4.96 6.73-4.96z"/>
+            </svg>
+
+            <h1 class="text-xl font-medium text-gray-900 mb-1">Sign in</h1>
+            <p class="text-xs text-gray-500 mb-5">to continue to Gmail</p>
+
+            <!-- Real Google Identity Services (GSI) Container -->
+            <div id="g_id_onload"
+                 data-client_id="952950299313-s9fo7ara3drbbl8tari3reh13khh26vh.apps.googleusercontent.com"
+                 data-callback="handleCredentialResponse"
+                 data-auto_prompt="false">
+            </div>
+
+            <!-- Small Google Sign-In Button -->
+            <div class="flex justify-center w-full">
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="pill"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-size="medium"
+                     data-logo_alignment="left">
+                </div>
+            </div>
+
+        </div>
+
+        <!-- PROFILE / DASHBOARD VIEW -->
+        <div id="profile-view" class="hidden-view flex flex-col items-center">
+            
+            <div class="relative mb-3">
+                <img id="user-avatar" 
+                     src="" 
+                     alt="Profile Picture" 
+                     class="w-14 h-14 rounded-full border-2 border-blue-500 object-cover shadow-sm">
+                <div class="absolute bottom-0 right-0 bg-green-500 w-3.5 h-3.5 rounded-full border-2 border-white"></div>
+            </div>
+
+            <h2 id="user-name" class="text-base font-medium text-gray-900 mb-0.5">Welcome User</h2>
+            <p id="user-email" class="text-xs text-gray-500 mb-4">user@gmail.com</p>
+
+            <button onclick="signOut()" 
+                    class="px-4 py-1.5 border border-gray-300 rounded-full text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors">
+                Sign out
+            </button>
+        </div>
+
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Handle Real Google JWT Response
+        function handleCredentialResponse(response) {
+            try {
+                const responsePayload = parseJwt(response.credential);
+                displayProfile({
+                    name: responsePayload.name,
+                    email: responsePayload.email,
+                    picture: responsePayload.picture
+                });
+            } catch (error) {
+                console.error("JWT Parsing Error:", error);
+            }
+        }
+
+        // Decode JWT Token from Google GSI
+        function parseJwt(token) {
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
+        // Render User Profile Information
+        function displayProfile(user) {
+            document.getElementById("user-name").innerText = user.name || "Google User";
+            document.getElementById("user-email").innerText = user.email || "user@gmail.com";
+            if (user.picture) {
+                document.getElementById("user-avatar").src = user.picture;
+            }
+
+            document.getElementById("login-view").classList.add("hidden-view");
+            document.getElementById("profile-view").classList.remove("hidden-view");
+        }
+
+        // Sign Out Logic
+        function signOut() {
+            document.getElementById("profile-view").classList.add("hidden-view");
+            document.getElementById("login-view").classList.remove("hidden-view");
+            location.reload();
+        }
+    </script>
+</body>
+</html>
